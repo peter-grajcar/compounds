@@ -1,6 +1,8 @@
-## Nomenclature of Inorganic Chemistry (IUPAC)
+## Nomenclature of Inorganic Chemistry (IUPAC, 2005)
 
 Link to the [full text](https://iupac.org/wp-content/uploads/2016/07/Red_Book_2005.pdf)
+
+Selected relevant sections from the text:
 
 > ### IR-5.2 STOICHIOMETRIC NAMES OF ELEMENTS AND BINARY COMPOUNDS
 >
@@ -25,3 +27,17 @@ Link to the [full text](https://iupac.org/wp-content/uploads/2016/07/Red_Book_20
 > anion designator ‘ide’, either formed by replacing the ending of the element name (‘en’,
 > ‘ese’, ‘ic’, ‘ine’, ‘ium’, ‘ogen’, ‘on’, ‘orus’, ‘um’, ‘ur’, ‘y’ or ‘ygen’) by ‘ide’ or by directly
 > adding ‘ide’ as an ending to the element name.
+>
+> In one case, an abbreviated name has to be chosen: germanium, germide. The systematic
+> name ‘germanide’ designates the anion GeH3.
+> Some names of monoatomic anions are based on the root of the Latin element names.
+> In these the ending ‘um’ or ‘ium’ is replaced by ‘ide’.
+>
+> Examples:
+>
+> 8. silver, argentum, argentide
+> 9. gold, aurum, auride
+> 10. copper, cuprum, cupride
+> 11. iron, ferrum, ferride
+> 12. lead, plumbum, plumbide
+> 13. tin, stannum, stannide

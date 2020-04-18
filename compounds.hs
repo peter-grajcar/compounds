@@ -1,4 +1,4 @@
-data Token = EmptyToken | LParenToken | RParenToken | AtomToken String | NumberToken Integer
+data Token = EmptyToken | LParenToken | RParenToken | AtomToken String | NumberToken Int
 
 instance Show Token where
     show EmptyToken = ""
@@ -16,13 +16,13 @@ isUpperLetter c = elem c ['A'..'Z']
 isLowerLetter :: Char -> Bool
 isLowerLetter c = elem c ['a'..'z']
 
--- >>> map charToInteger "0123456789"
+-- >>> map charToInt "0123456789"
 -- [0,1,2,3,4,5,6,7,8,9]
 --
-charToInteger :: Char -> Integer
-charToInteger c = elemIndex 0 c ['0'..'9']
+charToInt :: Char -> Int
+charToInt c = elemIndex 0 c ['0'..'9']
     where
-        elemIndex :: Eq a => Integer -> a -> [a] -> Integer
+        elemIndex :: Eq a => Int -> a -> [a] -> Int
         elemIndex _ _ [] = error "not a NumberToken"
         elemIndex i y (x:xs)
             | x == y    = i
@@ -41,18 +41,18 @@ tokenize input = tail (process EmptyToken input)
         process :: Token -> [Char] -> [Token]
         process currentToken [] = [currentToken]
         process (NumberToken n) (x:xs)
-            | isNumberToken x                       = process (NumberToken (n*10 + (charToInteger x))) xs
+            | isNumberToken x                       = process (NumberToken (n*10 + (charToInt x))) xs
         process (AtomToken [a]) (x:xs)
             | isUpperLetter a && isLowerLetter x    = process (AtomToken ([a, x])) xs 
             | isUpperLetter x                       = (AtomToken [a]):process (AtomToken [x]) xs
         process currentToken (x:xs)
-            | isNumberToken x                       = currentToken:process (NumberToken (charToInteger x)) xs
+            | isNumberToken x                       = currentToken:process (NumberToken (charToInt x)) xs
             | isUpperLetter x                       = currentToken:process (AtomToken [x]) xs
             | x == '('                              = currentToken:process (LParenToken) xs
             | x == ')'                              = currentToken:process (RParenToken) xs
             | otherwise                             = error ("unexpected char " ++ [x])
 
-data Compound = Atom String Integer | Group [Compound] Integer
+data Compound = Atom String Int | Group [Compound] Int
 
 instance Show Compound where
     show (Atom a n) = "(" ++ a ++ (show n) ++ ")"
@@ -91,6 +91,18 @@ type ElementInfo = (String, String, String)
 elements :: [ElementInfo]
 elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum")]
 
+-- list of element suffixes from section IR-5.3.3.2
+elementSuffixes :: [String]
+elementSuffixes = ["ogen", "ygen", "orus", "ese", "ine", "ium", "ic", "en", "on", "um", "ur", "y"]
+
+-- list of simple multiplicative prefixes
+simpleMultPrefixes :: [String]
+simpleMultPrefixes = ["", "di", "tri", "tetra", "penta", "hexa", "hepta", "octa", "nona", "deca", "undeca", "dodeca"]
+
+-- list of complicated multiplicative prefixes
+complicatedMultPrefixes :: [String]
+complicatedMultPrefixes = ["", "bis", "tris", "tetrakis", "pentakis", "hexakis", "heptakis", "octakis", "nonakis", "decakis", "undecakis", "dodecakis"]
+
 elementName :: ElementInfo -> String
 elementName (_, name, _) = name
 
@@ -111,10 +123,6 @@ getElementBySymbol symbol = search symbol elements
             | sym == (elementSymbol e)  = e
             | otherwise                 = search sym es
         search sym [] = error ("element" ++ sym ++ "not found")
-
--- list of element suffixes from section IR-5.3.3.2
-elementSuffixes :: [String]
-elementSuffixes = ["ogen", "ygen", "orus", "ese", "ine", "ium", "ic", "en", "on", "um", "ur", "y"]
 
 -- >>> indexOf 'l' "hello"
 -- 2
@@ -149,20 +157,36 @@ getStem name = take (findSuffixIndex name elementSuffixes) name
 
 -- "Exceptions include Zn and Group 18 elements ending in 'on', where the 'ide' ending is added to the element names"
 -- "For some elements (e.g. Fe, Ag, Au) a Latin stem is used before the 'ide' ending"
--- >>> homoatomicAnionName "S"
--- "sulfide"
+-- >>> homoatomicAnionName $ Atom "S" 2
+-- "disulfide"
 --
--- >>> homoatomicAnionName "Fe"
+-- >>> homoatomicAnionName $ Atom "Fe" 1
 -- "ferride"
 --
-homoatomicAnionName :: String -> String
-homoatomicAnionName symbol
-    | symbol == "Zn"                    = "zincide"
-    | symbol == "Ne"                    = "neonide"
-    | symbol == "Ar"                    = "argonide"
-    | symbol == "Kr"                    = "kryptonide"
-    | symbol == "Xn"                    = "xenonide"
-    | symbol == "Rn"                    = "radonide"
-    | symbol == "Og"                    = "oganessonide"
-    | elem symbol ["Fe", "Ag", "Au"]    = (getStem . elementLatinName . getElementBySymbol $ symbol) ++ "ide"
-    | otherwise                         = (getStem . elementName . getElementBySymbol $ symbol) ++ "ide"
+homoatomicAnionName :: Compound -> String
+homoatomicAnionName (Atom a n) = (simpleMultPrefixes !! (n - 1)) ++ (ide a)
+    where 
+        ide :: String -> String
+        ide symbol
+            | symbol == "Zn"    = "zincide"
+            | symbol == "Ne"    = "neonide"
+            | symbol == "Ar"    = "argonide"
+            | symbol == "Kr"    = "kryptonide"
+            | symbol == "Xn"    = "xenonide"
+            | symbol == "Rn"    = "radonide"
+            | symbol == "Og"    = "oganessonide"
+            | elem symbol ["Fe", "Ag", "Au", "Pb", "Sn", "Cu"]    
+                                = (getStem . elementLatinName . getElementBySymbol $ symbol) ++ "ide"
+            | otherwise         = (getStem . elementName . getElementBySymbol $ symbol) ++ "ide"
+homoatomicAnionName c = error ((show c) ++ "is not a homoatomic anion")
+
+
+-- Element Sequence, Table VI, page 260
+electronegativitySeq :: [String]
+electronegativitySeq = ["F", "Cl", "Br", "I", "At", "O", "S", "Se", "Te", "Po", "Lv", "H", "N", "P", 
+                        "As", "Sb", "Bi", "C", "Si", "Ge", "Sn", "Pb", "Fl", "B", "Al", "Ga", "In", 
+                        "Tl", "Zn", "Cd", "Hg", "Cn", "Cu", "Ag", "Au", "Rg", "Ni", "Pd", "Pt", "Ds",
+                        "Co", "Rh", "Ir", "Mt", "Fe", "Ru", "Os", "Hs", "Mn", "Tc", "Re", "Bh", "Cr",
+                        "Mo", "W", "Sg", "V", "Nb", "Ta", "Db", "Ti", "Zr", "Hf", "Rf", "Sc", "Y", 
+                        "La", "Lu", "Ac", "Lr", "Be", "Mg", "Ca", "Sr", "Ba", "Ra", "Li", "Na", "K",
+                        "Rb", "Cs", "Fr", "He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"]
