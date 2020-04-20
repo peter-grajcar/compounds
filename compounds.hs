@@ -52,10 +52,10 @@ tokenize input = tail (process EmptyToken input)
             | x == ')'                              = currentToken:process (RParenToken) xs
             | otherwise                             = error ("unexpected char " ++ [x])
 
-data Compound = Atom String Int | Group [Compound] Int
+data Compound = Atom Element Int | Group [Compound] Int
 
 instance Show Compound where
-    show (Atom a n) = "(" ++ a ++ (show n) ++ ")"
+    show (Atom a n) = "(" ++ (elementSymbol a) ++ (show n) ++ ")"
     show (Group cs n)
         | n == 1    = "(" ++ concat [show c | c <- cs] ++ ")" 
         | otherwise = "(" ++ concat [show c | c <- cs] ++ (show n) ++ ")" 
@@ -76,8 +76,8 @@ parse tokens = parseCompound [Group [] 1] tokens
         parseCompound (c:cs) []
             | null cs           = c
             | otherwise         = error "too many elements on the stack"
-        parseCompound ((Group gs n):cs) ((AtomToken a):(NumberToken an):ts) = parseCompound ((Group (gs ++ [Atom a an]) n):cs) ts
-        parseCompound ((Group gs n):cs) ((AtomToken a):ts)                  = parseCompound ((Group (gs ++ [Atom a 1]) n):cs) ts
+        parseCompound ((Group gs n):cs) ((AtomToken sym):(NumberToken an):ts) = parseCompound ((Group (gs ++ [Atom (getElementBySymbol sym) an]) n):cs) ts
+        parseCompound ((Group gs n):cs) ((AtomToken sym):ts)                  = parseCompound ((Group (gs ++ [Atom (getElementBySymbol sym) 1]) n):cs) ts
         parseCompound cs (LParenToken:ts)                                   = parseCompound ((Group [] 1):cs) ts
         parseCompound ((Group g1s _):(Group g2s n2):cs) (RParenToken:(NumberToken gn):ts)    = parseCompound ((Group (g2s ++ [Group g1s gn]) n2):cs) ts
         parseCompound ((Group g1s n1):(Group g2s n2):cs) (RParenToken:ts)                    = parseCompound ((Group (g2s ++ [Group g1s n1]) n2):cs) ts
@@ -86,10 +86,10 @@ parse tokens = parseCompound [Group [] 1] tokens
         parseCompound _ _ = error "error"
 
 
-type ElementInfo = (String, String, String)
+type Element = (String, String, String)
 
-elements :: [ElementInfo]
-elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum")]
+elements :: [Element]
+elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum"), ("O", "oxygen", "oxygenium")]
 
 -- list of element suffixes from section IR-5.3.3.2
 elementSuffixes :: [String]
@@ -103,26 +103,26 @@ simpleMultPrefixes = ["", "di", "tri", "tetra", "penta", "hexa", "hepta", "octa"
 complicatedMultPrefixes :: [String]
 complicatedMultPrefixes = ["", "bis", "tris", "tetrakis", "pentakis", "hexakis", "heptakis", "octakis", "nonakis", "decakis", "undecakis", "dodecakis"]
 
-elementName :: ElementInfo -> String
+elementName :: Element -> String
 elementName (_, name, _) = name
 
-elementSymbol :: ElementInfo -> String
+elementSymbol :: Element -> String
 elementSymbol (symbol, _, _) = symbol
 
-elementLatinName :: ElementInfo -> String
+elementLatinName :: Element -> String
 elementLatinName (_, _, latin) = latin
 
 -- >>> getElementBySymbol "He"
--- ("He","helium")
+-- ("He","helium","helium")
 --
-getElementBySymbol :: String -> ElementInfo
+getElementBySymbol :: String -> Element
 getElementBySymbol symbol = search symbol elements
     where
-        search :: String -> [ElementInfo] -> ElementInfo
+        search :: String -> [Element] -> Element
         search sym (e:es)
             | sym == (elementSymbol e)  = e
             | otherwise                 = search sym es
-        search sym [] = error ("element" ++ sym ++ "not found")
+        search sym [] = error ("element " ++ sym ++ " not found")
 
 -- >>> indexOf 'l' "hello"
 -- 2
@@ -157,28 +157,28 @@ getStem name = take (findSuffixIndex name elementSuffixes) name
 
 -- "Exceptions include Zn and Group 18 elements ending in 'on', where the 'ide' ending is added to the element names"
 -- "For some elements (e.g. Fe, Ag, Au) a Latin stem is used before the 'ide' ending"
--- >>> homoatomicAnionName $ Atom "S" 2
+-- >>> anionName $ Atom (getElementBySymbol "S") 2
 -- "disulfide"
 --
--- >>> homoatomicAnionName $ Atom "Fe" 1
+-- >>> anionName $ Atom (getElementBySymbol "Fe") 1
 -- "ferride"
 --
-homoatomicAnionName :: Compound -> String
-homoatomicAnionName (Atom a n) = (simpleMultPrefixes !! (n - 1)) ++ (ide a)
+anionName :: Compound -> String
+anionName (Atom e n) = (simpleMultPrefixes !! (n - 1)) ++ (ide e)
     where 
-        ide :: String -> String
-        ide symbol
-            | symbol == "Zn"    = "zincide"
-            | symbol == "Ne"    = "neonide"
-            | symbol == "Ar"    = "argonide"
-            | symbol == "Kr"    = "kryptonide"
-            | symbol == "Xn"    = "xenonide"
-            | symbol == "Rn"    = "radonide"
-            | symbol == "Og"    = "oganessonide"
-            | elem symbol ["Fe", "Ag", "Au", "Pb", "Sn", "Cu"]    
-                                = (getStem . elementLatinName . getElementBySymbol $ symbol) ++ "ide"
-            | otherwise         = (getStem . elementName . getElementBySymbol $ symbol) ++ "ide"
-homoatomicAnionName c = error ((show c) ++ "is not a homoatomic anion")
+        ide :: Element -> String
+        ide e
+            | elementSymbol e == "Zn"   = "zincide"
+            | elementSymbol e == "Ne"   = "neonide"
+            | elementSymbol e == "Ar"   = "argonide"
+            | elementSymbol e == "Kr"   = "kryptonide"
+            | elementSymbol e == "Xn"   = "xenonide"
+            | elementSymbol e == "Rn"   = "radonide"
+            | elementSymbol e == "Og"   = "oganessonide"
+            | elem (elementSymbol e) ["Fe", "Ag", "Au", "Pb", "Sn", "Cu"]    
+                                        = (getStem . elementLatinName $ e) ++ "ide"
+            | otherwise                 = (getStem . elementName $ e) ++ "ide"
+anionName c = error ((show c) ++ " is not a homoatomic anion")
 
 
 -- Element Sequence, Table VI, page 260
@@ -190,3 +190,7 @@ electronegativitySeq = ["F", "Cl", "Br", "I", "At", "O", "S", "Se", "Te", "Po", 
                         "Mo", "W", "Sg", "V", "Nb", "Ta", "Db", "Ti", "Zr", "Hf", "Rf", "Sc", "Y", 
                         "La", "Lu", "Ac", "Lr", "Be", "Mg", "Ca", "Sr", "Ba", "Ra", "Li", "Na", "K",
                         "Rb", "Cs", "Fr", "He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"]
+
+
+compoundName :: Compound -> String
+compoundName = undefined
