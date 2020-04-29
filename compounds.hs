@@ -89,7 +89,7 @@ parse tokens = parseCompound [Group [] 1] tokens
 type Element = (String, String, String)
 
 elements :: [Element]
-elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum"), ("O", "oxygen", "oxygenium"), ("Ca", "calcium", "calcium"), ("P", "phosphorus", "phosphorus"), ("C", "carbon", "carbo")]
+elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum"), ("O", "oxygen", "oxygenium"), ("Ca", "calcium", "calcium"), ("P", "phosphorus", "phosphorus"), ("C", "carbon", "carbo"), ("Cl", "chlorine", "chlorum")]
 
 -- list of element suffixes from section IR-5.3.3.2
 elementSuffixes :: [String]
@@ -164,7 +164,7 @@ getStem name = take (findSuffixIndex name elementSuffixes) name
 -- "ferride"
 --
 anionName :: Compound -> String
-anionName (Atom e n) = (simpleMultPrefixes !! (n - 1)) ++ (ide e)
+anionName (Atom e n) = prependPrefix (simpleMultPrefixes !! (n - 1)) (ide e)
     where 
         ide :: Element -> String
         ide e
@@ -210,10 +210,40 @@ sequencePosition (Group cs _) = minimum (map (sequencePosition) cs)
 -- ((O2),[(C1)])
 --
 splitConstituents :: Compound -> (Compound, [Compound])
-splitConstituents (Group cs _) = foldr  (\c (neg, pos) -> if (sequencePosition c) < (sequencePosition neg) then (c, neg:pos)  else (neg, c:pos) ) 
+splitConstituents (Group cs _) = foldr  (\c (neg, pos) -> if (sequencePosition c) < (sequencePosition neg) 
+                                                            then (c, pos ++ [neg])
+                                                            else (neg, pos ++ [c]) ) 
                                         (head cs, []) 
                                         (tail cs)
 splitConstituents _ = undefined
 
+
+-- >>> prependPrefix "tetra" "oxide"
+-- "tetroxide"
+--
+isVowel :: Char -> Bool
+isVowel c = elem c ['a', 'e', 'i', 'o', 'u']
+
+prependPrefix :: String -> String -> String
+prependPrefix p s
+    | null p                                = s
+    | isVowel (last p) && isVowel (head s)  = (init p) ++ s
+    | otherwise                             = p ++ s
+
+-- >>> compoundName $ parse (tokenize "CO2")
+-- "carbon dioxide"
+--
+-- >>> compoundName $ parse (tokenize "Ca3(PO4)2")
+-- "tricalcium bis(phosphorus tetroxide)"
+--
+-- >>> compoundName $ parse (tokenize "NaCl")
+-- "sodium chloride"
+--
 compoundName :: Compound -> String
-compoundName = undefined
+compoundName (Atom e n) = prependPrefix (simpleMultPrefixes !! (n - 1)) $ elementName e 
+compoundName g = makeName $ splitConstituents g
+    where
+        makeName (Atom e n, cs)     = concatMap ((++ " ") . compoundName) cs ++ anionName    (Atom e n)
+        makeName (Group gs n, cs)
+            | n > 1                 = concatMap ((++ " ") . compoundName) cs ++ (complicatedMultPrefixes !! (n - 1)) ++ "(" ++ compoundName (Group gs n) ++ ")"
+            | otherwise             = concatMap ((++ " ") . compoundName) cs ++ compoundName (Group gs n)
