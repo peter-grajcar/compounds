@@ -89,7 +89,7 @@ parse tokens = parseCompound [Group [] 1] tokens
 type Element = (String, String, String)
 
 elements :: [Element]
-elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum"), ("O", "oxygen", "oxygenium")]
+elements = [("H", "hydrogen", "hydrogenium"), ("He", "helium", "helium"), ("S", "sulfur", "sulphur"), ("Na", "sodium", "natrium"), ("Fe", "iron", "ferrum"), ("O", "oxygen", "oxygenium"), ("Ca", "calcium", "calcium"), ("P", "phosphorus", "phosphorus"), ("C", "carbon", "carbo")]
 
 -- list of element suffixes from section IR-5.3.3.2
 elementSuffixes :: [String]
@@ -182,15 +182,38 @@ anionName c = error ((show c) ++ " is not a homoatomic anion")
 
 
 -- Element Sequence, Table VI, page 260
-electronegativitySeq :: [String]
-electronegativitySeq = ["F", "Cl", "Br", "I", "At", "O", "S", "Se", "Te", "Po", "Lv", "H", "N", "P", 
-                        "As", "Sb", "Bi", "C", "Si", "Ge", "Sn", "Pb", "Fl", "B", "Al", "Ga", "In", 
-                        "Tl", "Zn", "Cd", "Hg", "Cn", "Cu", "Ag", "Au", "Rg", "Ni", "Pd", "Pt", "Ds",
-                        "Co", "Rh", "Ir", "Mt", "Fe", "Ru", "Os", "Hs", "Mn", "Tc", "Re", "Bh", "Cr",
-                        "Mo", "W", "Sg", "V", "Nb", "Ta", "Db", "Ti", "Zr", "Hf", "Rf", "Sc", "Y", 
-                        "La", "Lu", "Ac", "Lr", "Be", "Mg", "Ca", "Sr", "Ba", "Ra", "Li", "Na", "K",
-                        "Rb", "Cs", "Fr", "He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"]
+elementSequence :: [String]
+elementSequence = ["F", "Cl", "Br", "I", "At", "O", "S", "Se", "Te", "Po", "Lv", "H", "N", "P", 
+                    "As", "Sb", "Bi", "C", "Si", "Ge", "Sn", "Pb", "Fl", "B", "Al", "Ga", "In", 
+                    "Tl", "Zn", "Cd", "Hg", "Cn", "Cu", "Ag", "Au", "Rg", "Ni", "Pd", "Pt", "Ds",
+                    "Co", "Rh", "Ir", "Mt", "Fe", "Ru", "Os", "Hs", "Mn", "Tc", "Re", "Bh", "Cr",
+                    "Mo", "W", "Sg", "V", "Nb", "Ta", "Db", "Ti", "Zr", "Hf", "Rf", "Sc", "Y", 
+                    "La", "Lu", "Ac", "Lr", "Be", "Mg", "Ca", "Sr", "Ba", "Ra", "Li", "Na", "K",
+                    "Rb", "Cs", "Fr", "He", "Ne", "Ar", "Kr", "Xe", "Rn", "Og"]
 
+
+-- >>> sequencePosition $ parse (tokenize "O2")
+-- 5
+--
+-- >>> sequencePosition $ parse (tokenize "(PO4)2")
+-- 5
+--
+sequencePosition :: Compound -> Int
+sequencePosition (Atom  e  _) = indexOf (elementSymbol e) elementSequence
+sequencePosition (Group cs _) = minimum (map (sequencePosition) cs)
+
+-- splits the compoud to electronegative constituent and electropositive constituents
+-- >>> splitConstituents $ parse (tokenize "Ca3(PO4)2")
+-- (((P1)(O4)2),[(Ca3)])
+--
+-- >>> splitConstituents $ parse (tokenize "CO2")
+-- ((O2),[(C1)])
+--
+splitConstituents :: Compound -> (Compound, [Compound])
+splitConstituents (Group cs _) = foldr  (\c (neg, pos) -> if (sequencePosition c) < (sequencePosition neg) then (c, neg:pos)  else (neg, c:pos) ) 
+                                        (head cs, []) 
+                                        (tail cs)
+splitConstituents _ = undefined
 
 compoundName :: Compound -> String
 compoundName = undefined
