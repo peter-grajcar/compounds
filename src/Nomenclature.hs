@@ -122,17 +122,20 @@ splitConstituents (Group cs _) = foldr  (\c (neg, pos) -> if (sequencePosition c
 splitConstituents _ = undefined
 
 
+-- >>> prependPrefix "di" "oxide"
+-- "dioxide"
+--
 -- >>> prependPrefix "tetra" "oxide"
 -- "tetroxide"
 --
-isVowel :: Char -> Bool
-isVowel c = elem c ['a', 'e', 'i', 'o', 'u']
 
 prependPrefix :: String -> String -> String
 prependPrefix p s
     | null p                                = s
-    | isVowel (last p) && isVowel (head s)  = (init p) ++ s
+    | (last p) == 'a' && isVowel (head s)  = (init p) ++ s
     | otherwise                             = p ++ s
+    where
+        isVowel c = elem c ['a', 'e', 'o', 'u']
 
 
 -- | Generates compound name for given @Compound@ according to IUPAC's <https://iupac.org/wp-content/uploads/2016/07/Red_Book_2005.pdf Nomenclature of Inorganic Chemistry>.
