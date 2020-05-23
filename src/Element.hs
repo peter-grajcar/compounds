@@ -1,26 +1,46 @@
 module Element
 where
 
+import System.IO
+import System.IO.Unsafe
+import Data.Char
+
 data Element = Element {
   getSymbol :: String,
   getName :: String, 
   getLatinName :: String
-}
+} deriving (Show)
 
--- | list of all elements
+
+-- >>> splitOn ',' "abcd,123,efgh,345"
+-- ["abcd","123","efgh","345"]
+--
+splitOn :: (Eq a) => a -> [a] -> [[a]]
+splitOn _ [] = []
+splitOn delim list = split [] list
+  where
+    split w [] = [w]
+    split w (x:xs)
+      | x == delim  = w:split [] xs
+      | otherwise   = split (w ++ [x]) xs
+  
+
+-- >>> do elems <- loadElements; return (getName . head $ elems)
+-- "hydrogen"
+--
+loadElements :: IO [Element]
+loadElements = do
+  table <- readFile "res/periodic-table.csv"
+  let rows = tail . lines $ table
+  return (map (makeElement . splitOn ',') rows)
+  where
+    getLines h = hGetContents h >>= return . lines
+    makeElement cols = Element (cols!!3) (map (toLower) $ cols!!1) (map (toLower) $ cols!!2)
+
+
+-- | List of all elements. The list is loaded from @res/periodicTable.csv@.
 elements :: [Element]
-elements = [
-    Element "H" "hydrogen" "hydrogenium", 
-    Element "He" "helium" "helium", 
-    Element "S" "sulfur" "sulphur", 
-    Element "Na" "sodium" "natrium", 
-    Element "Fe" "iron" "ferrum", 
-    Element "O" "oxygen" "oxygenium", 
-    Element "Ca" "calcium" "calcium", 
-    Element "P" "phosphorus" "phosphorus", 
-    Element "C" "carbon" "carbo", 
-    Element "Cl" "chlorine" "chlorum"
-  ]
+elements = unsafePerformIO loadElements
 
 -- | Returns element with matching symbol. If no matching element is found, error is raised.
 --
