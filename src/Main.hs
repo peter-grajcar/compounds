@@ -4,6 +4,11 @@ import FormulaParser
 import Nomenclature
 import System.IO
 
+-- | Reads molecular formula from the standard input and prints a compositional name.
+--
+-- >>> main
+-- Enter Formula: CO2
+-- carbon dioxide
 main :: IO ()
 main = do
     putStr "Enter Formula: "
