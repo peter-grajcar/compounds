@@ -1,3 +1,7 @@
+{-|
+Module: Compound
+Description: Data type for chemical compounds
+-}
 module Compound
     ( Compound(..)
     ) where

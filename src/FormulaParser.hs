@@ -1,3 +1,7 @@
+{-|
+Module: FormulaParser
+Description: Module for chemical formulae parsing
+-}
 module FormulaParser
     ( parse
     ) where

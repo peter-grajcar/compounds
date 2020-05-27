@@ -1,6 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-|
 Module: Nomenclature
+Description: Module for compositional name generation from @Compound@
 
 == Nomenclature of Inorganic Chemistry (IUPAC, 2005)
 Link to the <https://iupac.org/wp-content/uploads/2016/07/Red_Book_2005.pdf full text>, <https://www.iupac.org/cms/wp-content/uploads/2016/07/Inorganic-Brief-Guide-V1-1.pdf brief guide>

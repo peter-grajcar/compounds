@@ -1,3 +1,7 @@
+{-|
+Module: Main
+Description: Main module
+-}
 module Main where
 
 import FormulaParser

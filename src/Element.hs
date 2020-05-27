@@ -1,3 +1,7 @@
+{-|
+Module: Element
+Description: List of elements and operations on them
+-}
 module Element
     (Element(..), 
      elements,
@@ -9,9 +13,11 @@ import System.IO.Unsafe
 import Data.Char
 
 data Element = Element {
-    getSymbol :: String,    -- ^ Element symbol, e.g. /Fe/
-    getName :: String,      -- ^ English name, e.g. /Iron/
-    getLatinName :: String  -- ^ Lating name, e.g. /Ferrum/
+    getSymbol :: String,            -- ^ Element symbol, e.g. /Fe/
+    getName :: String,              -- ^ English name, e.g. /Iron/
+    getLatinName :: String,         -- ^ Lating name, e.g. /Ferrum/
+    getElectronegativity :: Double  -- ^ Electronegativity
+
 } deriving (Show)
 
 
@@ -38,7 +44,7 @@ loadElements = do
     return (map (makeElement . splitOn ',') rows)
     where
         getLines h = hGetContents h >>= return . lines
-        makeElement cols = Element (cols!!3) (map (toLower) $ cols!!1) (map (toLower) $ cols!!2)
+        makeElement cols = Element (cols!!3) (map (toLower) $ cols!!1) (map (toLower) $ cols!!2) (if null $ cols!!18 then 0 else read $ cols!!18)
 
 
 -- | List of all elements. The list is loaded from @res/periodicTable.csv@.
