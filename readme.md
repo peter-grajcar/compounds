@@ -1,6 +1,6 @@
 # Inorganic Chemistry Nomenclature
 
-TODO
+Program for generating compositional names from chemical formulae of inorganic compounds.
 
 ## Installation
 
